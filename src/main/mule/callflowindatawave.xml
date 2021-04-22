@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns:http="http://www.mulesoft.org/schema/mule/http"
+	xmlns="http://www.mulesoft.org/schema/mule/core"
+	xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+	<http:listener-config name="HTTP_Listener_config" doc:name="HTTP Listener config" doc:id="6d4a0ba2-5c1b-4e0d-b34f-f6a76c700e2b" >
+		<http:listener-connection host="0.0.0.0" port="8081" />
+	</http:listener-config>
+	<flow name="mainFlow" doc:id="0a070d80-dc79-43e8-b0e5-2c44af8fa516" >
+		<http:listener doc:name="Listener" doc:id="e6b36c68-1f3d-4f0a-bf1d-478f3c03f1a5" config-ref="HTTP_Listener_config" path="/lookup"/>
+		<ee:transform doc:name="Transform Message" doc:id="d1341f02-fbd2-416e-a845-6975275938cd" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+lookup("lookupFlow", payload)]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+	</flow>
+	<flow name="lookupFlow" doc:id="715254b6-9daf-4313-8d6e-0ec132dccf1a" >
+		<set-payload value='#[%dw 2.0
+var accountLookup = readUrl("classpath://accountCode.json", "application/json")
+---
+payload map (item, itemIndex) -&gt; {
+	"accountId" : item.accountId,
+	"accountType": item.accountType,
+	"accountHolder": item.accountHolder,
+	"accountCode": accountLookup[upper(item.accountType) ]
+}]' doc:name="Set Payload" doc:id="151de746-6a05-4825-9280-fce74f6e7a17" />
+	</flow>
+</mule>
